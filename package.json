@@ -1,0 +1,12 @@
+{
+  "name": "tik",
+  "version": "1.0.0",
+  "description": "TikTok Node website",
+  "main": "node.js",
+  "scripts": {
+    "start": "node node.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
