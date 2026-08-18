@@ -8,7 +8,7 @@ module.exports = {
   rapidApi: {
     host: 'tiktok-scraper7.p.rapidapi.com',
     keys: [
-      // 'YOUR_RAPIDAPI_KEY_1',
+       '25d664956fmsh8528a6b12b10b8ap11d93cjsn23c8df392588',
       // 'YOUR_RAPIDAPI_KEY_2',
       // 'YOUR_RAPIDAPI_KEY_3'
     ],
