@@ -302,32 +302,29 @@ async function tikVerifyApi(req, res) {
 
 function extractUsername(input){ const s=String(input||'').trim(); const m=s.match(/tiktok\.com\/@([^\/?#\s]+)/i); return m?m[1]:s.replace(/^@/,''); }
 async function rapidApiFetch(pathname, params){
-  if(!RAPIDAPI_KEYS.length) return {_error:'No RAPIDAPI_KEYS configured',_code:0};
-  let keyIndex=Number(process.env.RAPIDAPI_KEY_INDEX||0)%RAPIDAPI_KEYS.length;
-  let last=null;
+  if(!RAPIDAPI_KEYS.length)return {_error:'No RapidAPI keys configured',_code:0,_detail:'Add API keys in config.js or RAPIDAPI_KEYS on Render.'};
+  let keyIndex=Number(process.env.RAPIDAPI_KEY_INDEX||0)%RAPIDAPI_KEYS.length,last=null;
   for(let i=0;i<RAPIDAPI_KEYS.length;i++){
-    const key=RAPIDAPI_KEYS[keyIndex];
-    const u=new URL('https://'+RAPIDAPI_HOST+pathname); Object.entries(params).forEach(([k,v])=>u.searchParams.set(k,v));
+    const key=RAPIDAPI_KEYS[keyIndex],u=new URL('https://'+RAPIDAPI_HOST+pathname);
+    Object.entries(params).forEach(([k,v])=>u.searchParams.set(k,v));
     try{
-      const r=await fetch(u,{headers:{'x-rapidapi-key':key,'x-rapidapi-host':RAPIDAPI_HOST},signal:AbortSignal.timeout(15000)});
-      const text=await r.text(); let data; try{data=JSON.parse(text)}catch{data={_error:'bad json',_code:r.status,_body:text.slice(0,120)}}
-      if(r.status===429){
-        keyIndex=(keyIndex+1)%RAPIDAPI_KEYS.length;
-        last={_error:'http: 429',_code:429,_body:text.slice(0,500)};
-        continue;
-      }
-      if(!r.ok){
-        return {
-          _error: r.status===401 ? 'Invalid RapidAPI key' : (r.status===403 ? 'Not subscribed to this API' : 'http: '+r.status),
-          _code:r.status,
-          _body:text.slice(0,500)
-        };
-      }
+      const r=await fetch(u,{headers:{'x-rapidapi-key':key,'x-rapidapi-host':RAPIDAPI_HOST,'accept':'application/json'},signal:AbortSignal.timeout(15000)}),text=await r.text();
+      let data;try{data=JSON.parse(text)}catch{data=null}
+      console.log(`[RapidAPI] ${pathname} HTTP ${r.status} key ${keyIndex+1}/${RAPIDAPI_KEYS.length}`);
+      console.log(`[RapidAPI] Body: ${text.slice(0,1000)}`);
+      if(r.status===429){last={_error:'Rate limited (HTTP 429)',_code:429,_body:text.slice(0,1000)};keyIndex=(keyIndex+1)%RAPIDAPI_KEYS.length;continue}
+      if(r.status===401){last={_error:'Invalid RapidAPI key (HTTP 401)',_code:401,_body:text.slice(0,1000)};keyIndex=(keyIndex+1)%RAPIDAPI_KEYS.length;continue}
+      if(r.status===403)return {_error:'RapidAPI access denied (HTTP 403)',_code:403,_body:text.slice(0,1000)};
+      if(!r.ok)return {_error:`RapidAPI HTTP ${r.status}`,_code:r.status,_body:text.slice(0,1000)};
+      if(!data)return {_error:'RapidAPI returned non-JSON response',_code:r.status,_body:text.slice(0,1000)};
       return data;
-    }catch(e){ last={_error:'network: '+e.message,_code:0}; }
+    }catch(e){last={_error:'RapidAPI network error: '+e.message,_code:0}}
   }
-  return last||{_error:'network: all keys failed',_code:0};
+  return last||{_error:'All RapidAPI keys failed',_code:0};
 }
+
+function providerDetail(data){if(!data||typeof data!=='object')return '';const p=[];if(data.msg)p.push('msg='+String(data.msg));if(data.message)p.push('message='+String(data.message));if(data.status)p.push('status='+String(data.status));if(data.code!==undefined)p.push('code='+String(data.code));return p.join(' | ')}
+function findProfileParts(data){const candidates=[];if(data?.data&&typeof data.data==='object')candidates.push(data.data);if(data?.userInfo&&typeof data.userInfo==='object')candidates.push(data.userInfo);candidates.push(data);for(const inner of candidates){const user=[inner?.user,inner?.userInfo?.user,inner?.data?.user].find(v=>v&&typeof v==='object'&&!Array.isArray(v));if(user){const stats=[inner?.stats,inner?.userInfo?.stats,inner?.data?.stats].find(v=>v&&typeof v==='object'&&!Array.isArray(v))||{};return {user,stats}}}return {user:{},stats:{}}}
 async function explorerApi(req,res,url){
   const action=url.searchParams.get('action')||'';
   if(action==='config'){
@@ -342,19 +339,30 @@ async function explorerApi(req,res,url){
   if(action==='profile'){
     const ck='profile:'+username.toLowerCase(); const c=cacheGet(ck); if(c)return json(res,200,c);
     const data=await rapidApiFetch('/user/info',{unique_id:username});
-    if(data._error){ if(data._code===403)return json(res,403,{error:'Not subscribed to this API'}); if(data._code===429)return json(res,429,{error:'Rate limited — try again later'}); return json(res,502,{error:'Could not reach TikTok API: '+data._error}); }
-    if(data.code===-1||data.msg==='error')return json(res,404,{error:'Profile not found or private account'});
-    const inner=Array.isArray(data.data)?{}:(data.data&&typeof data.data==='object'?data.data:(data.userInfo||{}));
-    const user=inner.user||data.user||{}; const stats=inner.stats||data.stats||{};
-    if(!Object.keys(user).length)return json(res,404,{error:'Profile not found'});
+    if(data._error){
+      const detail=data._body?` — Provider: ${data._body.slice(0,500)}`:'';
+      if(data._code===401)return json(res,502,{error:`RapidAPI key invalid. ${data._error}${detail}`});
+      if(data._code===403)return json(res,502,{error:`RapidAPI subscription/access problem. ${data._error}${detail}`});
+      if(data._code===429)return json(res,429,{error:`All RapidAPI keys are rate-limited. ${data._error}${detail}`});
+      return json(res,502,{error:`RapidAPI error: ${data._error}${detail}`});
+    }
+    if(data.code===-1)return json(res,404,{error:`TikTok API says profile was not found/private.${providerDetail(data)?' '+providerDetail(data):''}`});
+    const {user,stats}=findProfileParts(data);
+    if(!Object.keys(user).length){const keys=Object.keys(data).slice(0,30).join(', ')||'(no keys)';return json(res,502,{error:`RapidAPI returned HTTP 200, but no profile object was found. Response keys: ${keys}${providerDetail(data)?' | '+providerDetail(data):''}`});}
     const profile={id:String(user.id??user.uid??''),uniqueId:user.uniqueId??username,nickname:user.nickname??username,avatarUrl:user.avatarLarger??user.avatarMedium??user.avatarThumb??'',bio:user.signature??'',verified:Boolean(user.verified),followers:Number(stats.followerCount??0),following:Number(stats.followingCount??0),likes:Number(stats.heartCount??stats.heart??0),videoCount:Number(stats.videoCount??0),profileUrl:'https://www.tiktok.com/@'+(user.uniqueId??username)};
     cacheSet(ck,profile); return json(res,200,profile);
   }
   if(action==='videos'){
     const count=Math.max(1,Math.min(500,Number(url.searchParams.get('count')||30))); const cursor=url.searchParams.get('cursor')||'0'; const ck=`videos:${username}:${count}:${cursor}`; const c=cacheGet(ck); if(c)return json(res,200,c);
     const data=await rapidApiFetch('/user/posts',{unique_id:username,count,cursor});
-    if(data._error){if(data._code===403)return json(res,403,{error:'Not subscribed to this API'});if(data._code===429)return json(res,429,{error:'Rate limited — try again later'});return json(res,502,{error:'Could not reach TikTok API: '+data._error});}
-    if(data.code===-1)return json(res,404,{error:'Profile not found or private account'});
+    if(data._error){
+      const detail=data._body?` — Provider: ${data._body.slice(0,500)}`:'';
+      if(data._code===401)return json(res,502,{error:`RapidAPI key invalid. ${data._error}${detail}`});
+      if(data._code===403)return json(res,502,{error:`RapidAPI subscription/access problem. ${data._error}${detail}`});
+      if(data._code===429)return json(res,429,{error:`All RapidAPI keys are rate-limited. ${data._error}${detail}`});
+      return json(res,502,{error:`RapidAPI error: ${data._error}${detail}`});
+    }
+    if(data.code===-1)return json(res,404,{error:`TikTok API says profile was not found/private.${providerDetail(data)?' '+providerDetail(data):''}`});
     const inner=data.data&&typeof data.data==='object'?data.data:data; const raw=Array.isArray(inner.videos)?inner.videos:(Array.isArray(inner.aweme_list)?inner.aweme_list:(Array.isArray(data.videos)?data.videos:[]));
     const videos=raw.map(v=>{const desc=typeof v.title==='string'&&v.title?v.title:(Array.isArray(v.content_desc)?v.content_desc.filter(Boolean).join(' '):(v.content_desc||v.desc||v.description||''));const vm=v.video&&typeof v.video==='object'?v.video:{};const stats=v.stats&&typeof v.stats==='object'?v.stats:{};const thumb=v.cover??v.origin_cover??v.ai_dynamic_cover??vm.cover??vm.originCover??'';const views=Number(v.play_count??stats.playCount??stats.play_count??0),likes=Number(v.digg_count??stats.diggCount??stats.digg_count??0),comments=Number(v.comment_count??stats.commentCount??stats.comment_count??0),shares=Number(v.share_count??stats.shareCount??stats.share_count??0);const hashtags=[...desc.matchAll(/#([\w\u00C0-\u024F]+)/gu)].map(m=>m[1]);const vid=String(v.aweme_id??v.video_id??v.id??'');const numeric=String(v.video_id??v.id??'');const share=typeof v.share_url==='string'?v.share_url.trim():'';let videoUrl=share||(numberLike(numeric)?`https://www.tiktok.com/@${username}/video/${numeric}`:numberLike(vid)?`https://www.tiktok.com/@${username}/video/${vid}`:`https://www.tiktok.com/@${username}`);return{id:vid,description:desc,thumbnailUrl:thumb,videoUrl,views,likes,comments,shares,duration:Number(v.duration??vm.duration??0),uploadDate:Number(v.create_time??v.createTime??0),hashtags};});
     const result={videos,cursor:inner.cursor!=null?String(inner.cursor):null,hasMore:Boolean(inner.hasMore??data.has_more??false),total:videos.length}; if(cursor==='0')cacheSet(ck,result); return json(res,200,result);
