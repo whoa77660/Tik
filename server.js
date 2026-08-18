@@ -80,7 +80,13 @@ function startKeepAlive() {
 }
 
 const RAPIDAPI_HOST = process.env.RAPIDAPI_HOST || 'tiktok-scraper7.p.rapidapi.com';
-const RAPIDAPI_KEYS = (process.env.RAPIDAPI_KEYS || '').split(',').map(s => s.trim()).filter(Boolean);
+// Supports both the old working PHP variable (RAPIDAPI_KEY) and the newer
+// multi-key variable (RAPIDAPI_KEYS). A single RAPIDAPI_KEY is automatically
+// treated as a one-item key list, so existing Render env settings keep working.
+const RAPIDAPI_KEYS = (process.env.RAPIDAPI_KEYS || process.env.RAPIDAPI_KEY || '')
+  .split(',')
+  .map(s => s.trim())
+  .filter(Boolean);
 const CACHE_TTL = Number(process.env.CACHE_TTL || 300) * 1000;
 const cache = new Map();
 const TIKVERIFY_CSRF_TOKEN = process.env.TIKVERIFY_CSRF_TOKEN || crypto.randomBytes(24).toString('hex');
