@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TikTok Tools Suite</title>
+<style>
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;background:#070910;color:#eef0f8;font-family:Inter,system-ui,-apple-system,Segoe UI,sans-serif;overflow:hidden}
+.switcher{height:64px;display:flex;align-items:center;gap:10px;padding:10px 16px;background:rgba(10,11,18,.94);border-bottom:1px solid rgba(255,255,255,.1);backdrop-filter:blur(14px);position:relative;z-index:10}
+.brand{font-weight:800;font-size:17px;margin-right:auto}.brand span{background:linear-gradient(135deg,#7c5cff,#2fd3c7);-webkit-background-clip:text;background-clip:text;color:transparent}
+.tool{border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.05);color:#aeb4c8;border-radius:999px;padding:10px 16px;font-weight:700;cursor:pointer;transition:.2s}.tool:hover{transform:translateY(-1px);border-color:rgba(255,255,255,.25);color:#fff}.tool.active{background:linear-gradient(135deg,#7c5cff,#2fd3c7);border-color:transparent;color:#fff}
+.frame-wrap{height:calc(100vh - 64px);width:100%;position:relative}.app-frame{position:absolute;inset:0;width:100%;height:100%;border:0;background:#0a0b12;display:none}.app-frame.active{display:block}
+</style>
+</head>
+<body>
+<nav class="switcher">
+  <div class="brand">TikTok <span>Tools Suite</span></div>
+  <button class="tool active" data-target="tikverifyFrame">TikVerify</button>
+  <button class="tool" data-target="explorerFrame">TikTok Explorer</button>
+</nav>
+<div class="frame-wrap">
+  <iframe id="tikverifyFrame" class="app-frame active" src="/tikverify" title="TikVerify"></iframe>
+  <iframe id="explorerFrame" class="app-frame" src="/explorer" title="TikTok Explorer"></iframe>
+</div>
+<script>
+const buttons=[...document.querySelectorAll('.tool')]; const frames=[...document.querySelectorAll('.app-frame')];
+function switchTool(id){buttons.forEach(b=>b.classList.toggle('active',b.dataset.target===id));frames.forEach(f=>f.classList.toggle('active',f.id===id));localStorage.setItem('tiktok_suite_tool',id)}
+buttons.forEach(b=>b.addEventListener('click',()=>switchTool(b.dataset.target)));
+const saved=localStorage.getItem('tiktok_suite_tool'); if(saved&&document.getElementById(saved))switchTool(saved);
+</script>
+</body></html>
