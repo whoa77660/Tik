@@ -22,6 +22,18 @@ function loadEnv(file = path.join(ROOT, '.env')) {
 }
 loadEnv();
 
+// Optional local configuration. This lets the API keys be managed in
+// config.js while still allowing Render Environment Variables to override
+// the values when provided.
+let APP_CONFIG = {};
+try {
+  APP_CONFIG = require(path.join(ROOT, 'config.js'));
+} catch (error) {
+  if (error && error.code !== 'MODULE_NOT_FOUND') {
+    console.error('[Config] Failed to load config.js:', error.message);
+  }
+}
+
 /*
  * Render self-ping / keep-alive
  * ----------------------------
@@ -79,15 +91,24 @@ function startKeepAlive() {
   setInterval(selfPing, KEEP_ALIVE_INTERVAL);
 }
 
-const RAPIDAPI_HOST = process.env.RAPIDAPI_HOST || 'tiktok-scraper7.p.rapidapi.com';
-// Supports both the old working PHP variable (RAPIDAPI_KEY) and the newer
-// multi-key variable (RAPIDAPI_KEYS). A single RAPIDAPI_KEY is automatically
-// treated as a one-item key list, so existing Render env settings keep working.
-const RAPIDAPI_KEYS = (process.env.RAPIDAPI_KEYS || process.env.RAPIDAPI_KEY || '')
+const rapidApiConfig = (APP_CONFIG && APP_CONFIG.rapidApi) || {};
+const configuredKeys = Array.isArray(rapidApiConfig.keys)
+  ? rapidApiConfig.keys
+  : (rapidApiConfig.key ? [rapidApiConfig.key] : []);
+const envKeys = String(process.env.RAPIDAPI_KEYS || process.env.RAPIDAPI_KEY || '')
   .split(',')
   .map(s => s.trim())
   .filter(Boolean);
-const CACHE_TTL = Number(process.env.CACHE_TTL || 300) * 1000;
+
+// Environment variables win when present; otherwise config.js is used.
+// Duplicate keys are removed while preserving order.
+const RAPIDAPI_KEYS = [...new Set((envKeys.length ? envKeys : configuredKeys)
+  .map(s => String(s).trim())
+  .filter(Boolean))];
+const RAPIDAPI_HOST = String(
+  process.env.RAPIDAPI_HOST || rapidApiConfig.host || 'tiktok-scraper7.p.rapidapi.com'
+).trim();
+const CACHE_TTL = Number(process.env.CACHE_TTL || rapidApiConfig.cacheTtl || 300) * 1000;
 const cache = new Map();
 const TIKVERIFY_CSRF_TOKEN = process.env.TIKVERIFY_CSRF_TOKEN || crypto.randomBytes(24).toString('hex');
 
@@ -290,15 +311,33 @@ async function rapidApiFetch(pathname, params){
     try{
       const r=await fetch(u,{headers:{'x-rapidapi-key':key,'x-rapidapi-host':RAPIDAPI_HOST},signal:AbortSignal.timeout(15000)});
       const text=await r.text(); let data; try{data=JSON.parse(text)}catch{data={_error:'bad json',_code:r.status,_body:text.slice(0,120)}}
-      if(r.status===429){ keyIndex=(keyIndex+1)%RAPIDAPI_KEYS.length; last={_error:'http: 429',_code:429}; continue; }
-      if(!r.ok)return {_error:(r.status===403?'Not subscribed to this API':'http: '+r.status),_code:r.status};
+      if(r.status===429){
+        keyIndex=(keyIndex+1)%RAPIDAPI_KEYS.length;
+        last={_error:'http: 429',_code:429,_body:text.slice(0,500)};
+        continue;
+      }
+      if(!r.ok){
+        return {
+          _error: r.status===401 ? 'Invalid RapidAPI key' : (r.status===403 ? 'Not subscribed to this API' : 'http: '+r.status),
+          _code:r.status,
+          _body:text.slice(0,500)
+        };
+      }
       return data;
     }catch(e){ last={_error:'network: '+e.message,_code:0}; }
   }
   return last||{_error:'network: all keys failed',_code:0};
 }
 async function explorerApi(req,res,url){
-  const action=url.searchParams.get('action')||''; const username=extractUsername(url.searchParams.get('username')||'');
+  const action=url.searchParams.get('action')||'';
+  if(action==='config'){
+    return json(res,200,{
+      configured:Boolean(RAPIDAPI_KEYS.length),
+      keyCount:RAPIDAPI_KEYS.length,
+      host:RAPIDAPI_HOST
+    });
+  }
+  const username=extractUsername(url.searchParams.get('username')||'');
   if(!username)return json(res,400,{error:'username is required'});
   if(action==='profile'){
     const ck='profile:'+username.toLowerCase(); const c=cacheGet(ck); if(c)return json(res,200,c);
