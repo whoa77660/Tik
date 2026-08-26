@@ -326,7 +326,17 @@ async function rapidApiFetch(pathname, params){
 function providerDetail(data){if(!data||typeof data!=='object')return '';const p=[];if(data.msg)p.push('msg='+String(data.msg));if(data.message)p.push('message='+String(data.message));if(data.status)p.push('status='+String(data.status));if(data.code!==undefined)p.push('code='+String(data.code));return p.join(' | ')}
 function findProfileParts(data){const candidates=[];if(data?.data&&typeof data.data==='object')candidates.push(data.data);if(data?.userInfo&&typeof data.userInfo==='object')candidates.push(data.userInfo);candidates.push(data);for(const inner of candidates){const user=[inner?.user,inner?.userInfo?.user,inner?.data?.user].find(v=>v&&typeof v==='object'&&!Array.isArray(v));if(user){const stats=[inner?.stats,inner?.userInfo?.stats,inner?.data?.stats].find(v=>v&&typeof v==='object'&&!Array.isArray(v))||{};return {user,stats}}}return {user:{},stats:{}}}
 async function explorerApi(req,res,url){
-  const action=url.searchParams.get('action')||'';
+  // The current Explorer frontend uses the original TikExplore API paths
+  // (/user/info and /user/posts), while this Node server normally exposes
+  // the newer action-based API. Support both formats so the working
+  // Explorer frontend does not need to be changed.
+  const pathnameAction = url.pathname.endsWith('/user/info')
+    ? 'profile'
+    : (url.pathname.endsWith('/user/posts') ? 'videos' : '');
+  const actionFromQuery = url.searchParams.get('action') || '';
+  const action = actionFromQuery || pathnameAction;
+  const legacyProviderPath = !actionFromQuery && Boolean(pathnameAction);
+
   if(action==='config'){
     return json(res,200,{
       configured:Boolean(RAPIDAPI_KEYS.length),
@@ -334,8 +344,33 @@ async function explorerApi(req,res,url){
       host:RAPIDAPI_HOST
     });
   }
-  const username=extractUsername(url.searchParams.get('username')||'');
+  const username=extractUsername(url.searchParams.get('username')||url.searchParams.get('unique_id')||'');
   if(!username)return json(res,400,{error:'username is required'});
+
+  // Legacy-compatible raw provider responses. The original TikExplore
+  // frontend normalizes the tiktok-scraper7 response in the browser, so
+  // these two paths must return the provider payload rather than the
+  // server-normalized profile/video object.
+  if(legacyProviderPath){
+    const providerPath = action==='profile' ? '/user/info' : '/user/posts';
+    const params = action==='profile'
+      ? {unique_id:username}
+      : {
+          unique_id:username,
+          count:Math.max(1,Math.min(500,Number(url.searchParams.get('count')||30))),
+          cursor:url.searchParams.get('cursor')||'0'
+        };
+    const data=await rapidApiFetch(providerPath,params);
+    if(data._error){
+      const detail=data._body?` — Provider: ${data._body.slice(0,500)}`:'';
+      if(data._code===401)return json(res,502,{error:`RapidAPI key invalid. ${data._error}${detail}`});
+      if(data._code===403)return json(res,502,{error:`RapidAPI subscription/access problem. ${data._error}${detail}`});
+      if(data._code===429)return json(res,429,{error:`All RapidAPI keys are rate-limited. ${data._error}${detail}`});
+      return json(res,502,{error:`RapidAPI error: ${data._error}${detail}`});
+    }
+    return json(res,200,data);
+  }
+
   if(action==='profile'){
     const ck='profile:'+username.toLowerCase(); const c=cacheGet(ck); if(c)return json(res,200,c);
     const data=await rapidApiFetch('/user/info',{unique_id:username});
@@ -397,7 +432,7 @@ const server=http.createServer(async(req,res)=>{
   const url=new URL(req.url,'http://localhost');
   try{
     if(req.method==='POST'&&url.pathname==='/api/tikverify')return await tikVerifyApi(req,res);
-    if(req.method==='GET'&&url.pathname==='/api/explorer')return await explorerApi(req,res,url);
+    if(req.method==='GET'&&(url.pathname==='/api/explorer'||url.pathname==='/api/explorer/user/info'||url.pathname==='/api/explorer/user/posts'))return await explorerApi(req,res,url);
     if(req.method==='GET')return await serve(req,res,url);
     return json(res,405,{error:'Method not allowed'});
   }catch(e){ console.error(e); return json(res,500,{error:'Internal server error'}); }
