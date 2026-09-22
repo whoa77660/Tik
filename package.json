@@ -1,0 +1,9 @@
+{
+  "name": "tiktok-node-suite",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Node.js suite combining TikVerify and TikTok Explorer with one-click switching.",
+  "type": "commonjs",
+  "scripts": {"start":"node server.js"},
+  "engines": {"node": ">=18"}
+}
