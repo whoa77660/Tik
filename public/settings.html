@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+    <title>Settings • SMM Panel</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --bg-start: #1a1a2e; --bg-end: #16213e; --accent: #00d4ff;
+            --card: rgba(20,20,40,0.8); --text: #e0e0e0; --text2: #a0a0b0;
+            --border: rgba(255,255,255,0.1);
+        }
+
+        body {
+            background: radial-gradient(circle at 10% 20%, var(--bg-start), var(--bg-end));
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            min-height: 100vh; display: flex; align-items: center; justify-content: center;
+            padding: 20px; color: var(--text);
+        }
+
+        .container { width: 100%; max-width: 520px; }
+
+        .glass-card {
+            background: var(--card); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+            border-radius: 16px; padding: 30px;
+            box-shadow: 0 15px 30px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.05) inset;
+        }
+
+        h2 {
+            font-size: 1.8rem; font-weight: 600; margin-bottom: 25px;
+            background: linear-gradient(135deg, #fff, #b0b0ff);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+
+        h3 { font-size: 1.1rem; font-weight: 600; margin: 20px 0 10px; color: #fff; }
+
+        label { font-size: 0.9rem; color: var(--text2); margin-bottom: 5px; display: block; }
+
+        input {
+            background: rgba(0,0,0,0.3); border: 1px solid var(--border);
+            color: var(--text); padding: 12px 15px; border-radius: 100px;
+            width: 100%; margin: 8px 0; outline: none; font-size: 0.95rem;
+            font-family: inherit; transition: all 0.2s ease;
+        }
+
+        input:focus { border-color: var(--accent); box-shadow: 0 0 10px rgba(0,212,255,0.4); background: rgba(0,0,0,0.5); }
+        input::placeholder { color: var(--text2); font-weight: 300; }
+
+        button {
+            background: linear-gradient(135deg, #667eea, #764ba2); color: white;
+            border: none; padding: 12px 22px; border-radius: 100px;
+            font-weight: 600; cursor: pointer; box-shadow: 0 6px 14px rgba(0,0,0,0.4);
+            letter-spacing: 0.3px; border: 1px solid rgba(255,255,255,0.1);
+            transition: all 0.2s; font-size: 0.95rem; position: relative; overflow: hidden;
+            width: 100%; margin-top: 15px;
+        }
+
+        button:active { transform: scale(0.97); }
+        button:hover { transform: translateY(-1px); box-shadow: 0 10px 22px rgba(102,126,234,0.5); }
+
+        button::after {
+            content: ''; position: absolute; top: 50%; left: 50%;
+            width: 4px; height: 4px; background: rgba(255,255,255,0.7);
+            opacity: 0; border-radius: 100%;
+            transform: scale(1,1) translate(-50%,-50%); transform-origin: 50% 50%;
+        }
+
+        button:focus:not(:active)::after { animation: ripple 0.4s ease-out; }
+
+        @keyframes ripple {
+            0% { transform: scale(0,0) translate(-50%,-50%); opacity: 0.5; }
+            100% { transform: scale(15,15) translate(-50%,-50%); opacity: 0; }
+        }
+
+        .status-badge {
+            padding: 12px 20px; border-radius: 100px; margin: 15px 0;
+            text-align: center; font-size: 0.95rem; font-weight: 500;
+            display: flex; align-items: center; justify-content: center; gap: 8px;
+        }
+
+        .status-connected { background: rgba(0,200,150,0.15); border: 1px solid #00c896; color: #00ffc0; }
+        .status-disconnected { background: rgba(200,50,50,0.15); border: 1px solid #c83232; color: #ff8a8a; }
+        .status-checking { background: rgba(255,200,0,0.15); border: 1px solid #ffc800; color: #ffe080; }
+
+        .message {
+            padding: 10px 15px; border-radius: 100px; margin: 10px 0;
+            font-size: 0.9rem; font-weight: 500; text-align: center; display: none;
+        }
+
+        .message.success { background: rgba(0,200,150,0.15); border: 1px solid #00c896; color: #00ffc0; display: block; }
+        .message.error { background: rgba(255,70,70,0.2); border: 1px solid #ff4d4d; color: #ff8989; display: block; }
+
+        .links {
+            margin-top: 30px; display: flex; gap: 20px; justify-content: center; flex-wrap: wrap;
+        }
+
+        a { color: #aaccff; text-decoration: none; font-weight: 500; transition: color 0.2s; font-size: 0.95rem; }
+        a:hover { color: white; }
+
+        .spinner {
+            border: 2px solid rgba(255,255,255,0.15); border-top: 2px solid var(--accent);
+            border-radius: 50%; width: 18px; height: 18px;
+            animation: spin 0.8s linear infinite; display: inline-block;
+        }
+
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        .info-card {
+            background: rgba(0,0,0,0.3); border: 1px solid var(--border);
+            border-radius: 16px; padding: 15px 20px; margin: 20px 0;
+        }
+
+        .info-card .info-row {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 10px 0; font-size: 0.9rem;
+        }
+
+        .info-card .info-row:not(:last-child) { border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .info-label { color: var(--text2); }
+        .info-value { color: white; font-weight: 500; }
+
+        .toast-container {
+            position: fixed; top: 20px; right: 20px; z-index: 9999;
+            display: flex; flex-direction: column; gap: 6px; pointer-events: none;
+            max-width: min(300px, 85vw);
+        }
+
+        .toast {
+            background: rgba(20,30,50,0.95); backdrop-filter: blur(10px);
+            border-left: 4px solid var(--accent); border-radius: 12px;
+            padding: 10px 16px; color: white; font-weight: 500;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.5);
+            transform: translateX(100%);
+            animation: slideIn 0.3s forwards, fadeOut 0.3s 2.5s forwards;
+            pointer-events: auto; border: 1px solid rgba(255,255,255,0.1);
+            font-size: 0.85rem;
+        }
+
+        .toast.error { border-left-color: #ff4d4d; }
+        .toast.success { border-left-color: #00c851; }
+
+        @keyframes slideIn { to { transform: translateX(0); } }
+        @keyframes fadeOut { to { opacity: 0; transform: translateX(100%); } }
+
+        @media (max-width: 480px) {
+            .glass-card { padding: 20px; }
+            .links { flex-direction: column; align-items: center; gap: 12px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="toast-container" id="toastContainer"></div>
+    
+    <div class="container">
+        <div class="glass-card">
+            <h2>⚙️ Settings</h2>
+            
+            <div id="statusBadge" class="status-badge status-checking">
+                <span class="spinner"></span> Checking API connection...
+            </div>
+
+            <div class="info-card" id="accountInfo" style="display:none;">
+                <div class="info-row">
+                    <span class="info-label">👤 Username</span>
+                    <span class="info-value" id="usernameDisplay">-</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">💰 Balance</span>
+                    <span class="info-value" id="balanceDisplay">-</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">📅 Member Since</span>
+                    <span class="info-value" id="memberSince">-</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">📦 Cached Services</span>
+                    <span class="info-value" id="servicesCount">-</span>
+                </div>
+            </div>
+
+            <h3>🔄 Update API Key</h3>
+            <div id="message"></div>
+            <form id="settingsForm" onsubmit="updateApiKey(event)">
+                <label for="apiKey">SMM API Key</label>
+                <input type="text" id="apiKey" name="api_key" placeholder="Enter your SMM API key" required autocomplete="off">
+                <button type="submit" id="updateBtn">💾 Update API Key</button>
+            </form>
+
+            <div class="links">
+                <a href="/">⬅ Back to Dashboard</a>
+                <a href="/logout">🚪 Logout</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.innerText = message;
+            container.appendChild(toast);
+            setTimeout(() => { if (toast.parentNode) toast.remove(); }, 3000);
+        }
+
+        function showMessage(message, type) {
+            const msgDiv = document.getElementById('message');
+            msgDiv.className = `message ${type}`;
+            msgDiv.textContent = message;
+            msgDiv.style.display = 'block';
+            setTimeout(() => { msgDiv.style.display = 'none'; }, 5000);
+        }
+
+        function updateStatusBadge(status, message) {
+            const badge = document.getElementById('statusBadge');
+            badge.className = 'status-badge';
+            switch(status) {
+                case 'connected': badge.classList.add('status-connected'); badge.innerHTML = '✅ ' + message; break;
+                case 'disconnected': badge.classList.add('status-disconnected'); badge.innerHTML = '❌ ' + message; break;
+                case 'checking': badge.classList.add('status-checking'); badge.innerHTML = '<span class="spinner"></span> ' + message; break;
+            }
+        }
+
+        async function loadSettings() {
+            try {
+                const response = await fetch('/api/settings/data');
+                const data = await response.json();
+                
+                if (data.success) {
+                    updateStatusBadge(data.connected ? 'connected' : 'disconnected', 
+                        data.connected ? 'API Connected' : 'API Disconnected');
+                    
+                    document.getElementById('accountInfo').style.display = 'block';
+                    document.getElementById('usernameDisplay').textContent = data.username || '-';
+                    document.getElementById('balanceDisplay').textContent = data.balance || '-';
+                    document.getElementById('memberSince').textContent = data.memberSince || '-';
+                    document.getElementById('servicesCount').textContent = 
+                        data.servicesInfo?.cached ? `${data.servicesInfo.cached} services` : '-';
+                    
+                    if (data.apiKey) {
+                        document.getElementById('apiKey').value = data.apiKey;
+                    }
+                }
+            } catch (error) {
+                updateStatusBadge('disconnected', 'Failed to load settings');
+            }
+        }
+
+        async function updateApiKey(event) {
+            event.preventDefault();
+            
+            const apiKey = document.getElementById('apiKey').value.trim();
+            if (!apiKey) { showMessage('Please enter an API key', 'error'); return; }
+            
+            const updateBtn = document.getElementById('updateBtn');
+            const originalText = updateBtn.innerHTML;
+            updateBtn.innerHTML = '<span class="spinner"></span> Validating...';
+            updateBtn.disabled = true;
+            
+            try {
+                updateStatusBadge('checking', 'Validating API key...');
+                
+                const response = await fetch('/api/settings/update', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ api_key: apiKey })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    updateStatusBadge('connected', 'API Connected');
+                    showMessage('✅ ' + data.message, 'success');
+                    showToast('API key updated successfully!', 'success');
+                    setTimeout(loadSettings, 1000);
+                } else {
+                    updateStatusBadge('disconnected', 'API Disconnected');
+                    showMessage('❌ ' + (data.error || 'Update failed'), 'error');
+                    showToast(data.error || 'Update failed', 'error');
+                }
+            } catch (error) {
+                updateStatusBadge('disconnected', 'Connection Failed');
+                showMessage('Network error. Please try again.', 'error');
+            } finally {
+                updateBtn.innerHTML = originalText;
+                updateBtn.disabled = false;
+            }
+        }
+
+        document.getElementById('apiKey').addEventListener('focus', function() { this.type = 'text'; });
+        
+        loadSettings();
+    </script>
+</body>
+</html>

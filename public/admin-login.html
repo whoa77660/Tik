@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Login - SMM Panel</title>
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{
+            background:linear-gradient(135deg,#0a0a1a,#1a0a2e);
+            font-family:'Segoe UI',Arial,sans-serif;
+            min-height:100vh;display:flex;align-items:center;justify-content:center;
+            color:#fff;padding:20px
+        }
+        .admin-box{
+            background:rgba(20,20,40,.95);border-radius:16px;
+            padding:35px 30px;width:100%;max-width:400px;
+            border:1px solid rgba(255,107,107,.3);
+            box-shadow:0 20px 40px rgba(0,0,0,.5)
+        }
+        .icon{text-align:center;font-size:3rem;margin-bottom:10px}
+        h2{text-align:center;color:#ff6b6b;font-size:1.5rem;margin-bottom:5px}
+        .sub{text-align:center;color:#888;font-size:.85rem;margin-bottom:25px}
+        input{
+            width:100%;padding:12px 15px;border-radius:10px;margin:8px 0;
+            border:1px solid rgba(255,255,255,.15);
+            background:rgba(0,0,0,.3);color:#fff;font-size:.95rem
+        }
+        input:focus{outline:none;border-color:#ff6b6b;box-shadow:0 0 15px rgba(255,107,107,.2)}
+        button{
+            width:100%;padding:13px;border-radius:10px;margin-top:15px;
+            background:linear-gradient(135deg,#e74c3c,#c0392b);
+            color:#fff;font-weight:700;font-size:1rem;border:none;cursor:pointer
+        }
+        button:hover{transform:translateY(-2px);box-shadow:0 10px 25px rgba(231,76,60,.4)}
+        .error{
+            background:rgba(255,71,87,.15);color:#ff4757;
+            padding:10px;border-radius:8px;text-align:center;
+            margin:10px 0;display:none;font-size:.9rem
+        }
+        p{text-align:center;margin-top:18px}
+        a{color:#aaccff;text-decoration:none} a:hover{color:#fff}
+    </style>
+</head>
+<body>
+    <div class="admin-box">
+        <div class="icon">👑</div>
+        <h2>Admin Panel</h2>
+        <p class="sub">Restricted Access</p>
+        <div class="error" id="err"></div>
+        <form onsubmit="adminLogin(event)">
+            <input type="text" id="username" placeholder="Admin Username" required autocomplete="off">
+            <input type="password" id="password" placeholder="Admin Password" required>
+            <button type="submit">Login as Admin</button>
+        </form>
+        <p><a href="/">← Back to User Panel</a></p>
+    </div>
+    <script>
+        async function adminLogin(e){
+            e.preventDefault();
+            const u=document.getElementById('username').value.trim();
+            const p=document.getElementById('password').value.trim();
+            if(!u||!p) return;
+            const r=await fetch('/api/admin/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:u,password:p})});
+            const d=await r.json();
+            if(d.success) window.location.href='/admin';
+            else{ document.getElementById('err').style.display='block'; document.getElementById('err').innerText=d.error; }
+        }
+    </script>
+</body>
+</html>

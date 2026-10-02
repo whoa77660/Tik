@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - SMM Panel</title>
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{
+            background:linear-gradient(135deg,#0a0a1a,#1a1a3a);
+            font-family:'Segoe UI',Arial,sans-serif;
+            min-height:100vh;display:flex;align-items:center;justify-content:center;
+            color:#fff;padding:20px
+        }
+        .login-box{
+            background:rgba(20,20,40,.95);border-radius:16px;
+            padding:35px 30px;width:100%;max-width:380px;
+            border:1px solid rgba(255,255,255,.1);
+            box-shadow:0 20px 40px rgba(0,0,0,.5)
+        }
+        h2{
+            text-align:center;font-size:1.6rem;margin-bottom:5px;
+            background:linear-gradient(135deg,#00d4ff,#b0b0ff);
+            -webkit-background-clip:text;-webkit-text-fill-color:transparent
+        }
+        .sub{text-align:center;color:#888;font-size:.85rem;margin-bottom:25px}
+        input{
+            width:100%;padding:12px 15px;border-radius:10px;margin:8px 0;
+            border:1px solid rgba(255,255,255,.15);
+            background:rgba(0,0,0,.3);color:#fff;font-size:.95rem;
+            transition:all .2s
+        }
+        input:focus{outline:none;border-color:#00d4ff;box-shadow:0 0 15px rgba(0,212,255,.2)}
+        button{
+            width:100%;padding:13px;border-radius:10px;margin-top:15px;
+            background:linear-gradient(135deg,#6c5ce7,#8b5cf6);
+            color:#fff;font-weight:700;font-size:1rem;border:none;cursor:pointer;
+            transition:all .2s
+        }
+        button:hover{transform:translateY(-2px);box-shadow:0 10px 25px rgba(108,92,231,.4)}
+        .error{
+            background:rgba(255,71,87,.15);color:#ff4757;
+            padding:10px;border-radius:8px;text-align:center;
+            margin:10px 0;display:none;font-size:.9rem
+        }
+        p{text-align:center;margin-top:18px;font-size:.9rem;color:#888}
+        a{color:#aaccff;text-decoration:none} a:hover{color:#fff}
+    </style>
+</head>
+<body>
+    <div class="login-box">
+        <h2>Welcome Back</h2>
+        <p class="sub">Login to your SMM Panel</p>
+        <div class="error" id="err"></div>
+        <form onsubmit="doLogin(event)">
+            <input type="text" name="username" placeholder="Username" required autocomplete="username">
+            <input type="password" name="password" placeholder="Password" required autocomplete="current-password">
+            <button type="submit">Login</button>
+        </form>
+        <p>Don't have an account? <a href="/register">Register</a></p>
+    </div>
+    <script>
+        async function doLogin(e){
+            e.preventDefault();
+            const f=new FormData(e.target);
+            const d=Object.fromEntries(f);
+            const r=await fetch('/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)});
+            const j=await r.json();
+            if(j.success) window.location.href='/';
+            else{ document.getElementById('err').style.display='block'; document.getElementById('err').innerText=j.error; }
+        }
+    </script>
+</body>
+</html>

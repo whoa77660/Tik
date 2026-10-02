@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - SMM Panel</title>
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{
+            background:linear-gradient(135deg,#0a0a1a,#1a0a2e);
+            color:#fff;font-family:'Segoe UI',Arial,sans-serif;
+            padding:20px;min-height:100vh
+        }
+        .header{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:15px;margin-bottom:25px}
+        h1{color:#ff6b6b;font-size:1.8rem}
+        .card{
+            background:rgba(20,20,40,.9);border-radius:14px;
+            padding:20px;margin-bottom:18px;
+            border:1px solid rgba(255,255,255,.1)
+        }
+        h2{color:#00d4ff;margin-bottom:15px}
+        h3{color:#ddd;margin-bottom:12px}
+        
+        .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:20px}
+        .stat{
+            background:rgba(0,0,0,.3);padding:18px;border-radius:12px;
+            text-align:center;border:1px solid rgba(255,255,255,.1)
+        }
+        .stat .val{font-size:2rem;font-weight:700;color:#00d4ff}
+        .stat .lbl{font-size:.8rem;color:#888;margin-top:5px}
+        
+        label{display:block;font-size:.85rem;color:#aaa;margin:10px 0 5px}
+        input,button{
+            padding:10px 14px;border-radius:8px;
+            border:1px solid rgba(255,255,255,.15);
+            background:rgba(0,0,0,.3);color:#fff;
+            font-size:.9rem;font-family:inherit;width:100%
+        }
+        button{
+            background:linear-gradient(135deg,#6c5ce7,#8b5cf6);
+            color:#fff;font-weight:700;border:none;cursor:pointer;margin-top:10px
+        }
+        button:hover{transform:translateY(-1px)}
+        button.red{background:linear-gradient(135deg,#e74c3c,#c0392b)}
+        button.green{background:linear-gradient(135deg,#00b894,#00cec9)}
+        button.sm{padding:5px 10px;font-size:.8rem;width:auto}
+        
+        table{width:100%;border-collapse:collapse;font-size:.85rem}
+        th{text-align:left;padding:10px 8px;border-bottom:1px solid rgba(255,255,255,.1);color:#999;font-size:.75rem;text-transform:uppercase}
+        td{padding:10px 8px;border-bottom:1px solid rgba(255,255,255,.05)}
+        
+        .badge{padding:4px 10px;border-radius:20px;font-size:.75rem}
+        .badge-info{background:rgba(0,212,255,.15);color:#00d4ff}
+        
+        .msg{padding:12px;border-radius:10px;margin:10px 0;font-size:.9rem}
+        .msg.success{background:rgba(0,255,136,.1);color:#00ff88}
+        .msg.error{background:rgba(255,71,87,.1);color:#ff4757}
+        
+        .grid2{display:grid;grid-template-columns:1fr 1fr;gap:15px}
+        a{color:#aaccff;text-decoration:none} a:hover{color:#fff}
+        
+        @media(max-width:600px){.grid2{grid-template-columns:1fr}}
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>👑 Admin Dashboard</h1>
+        <div style="display:flex;gap:10px;align-items:center">
+            <a href="/admin/logout" style="color:#ff6b6b;">🚪 Logout</a>
+            <a href="/">📱 User Panel</a>
+        </div>
+    </div>
+
+    <div class="stats" id="stats"></div>
+
+    <div class="card">
+        <h2>👥 Users</h2>
+        <div style="overflow-x:auto;">
+            <table><thead><tr><th>Username</th><th>API Key</th><th>Orders</th><th>Auto</th><th>Joined</th><th>Action</th></tr></thead>
+                <tbody id="utbl"><tr><td colspan="6" style="text-align:center;color:#888;">Loading...</td></tr></tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>⚙️ Settings</h2>
+        <div class="grid2">
+            <div>
+                <h3>🔄 Refresh Services</h3>
+                <p style="font-size:.8rem;color:#888;margin-bottom:10px;">Fetch latest services from API</p>
+                <button onclick="refreshSvc()">🔄 Refresh Now</button>
+                <div id="rmsg"></div>
+            </div>
+            <div>
+                <h3>📋 Info</h3>
+                <p style="font-size:.9rem;margin-top:10px;">Admin Secret: <code style="color:#ffd700;" id="sec">-</code></p>
+                <p style="font-size:.8rem;color:#888;">Users need this to register</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function load(){
+            try{
+                const r=await fetch('/api/admin/dashboard'); const d=await r.json();
+                document.getElementById('stats').innerHTML=`
+                    <div class="stat"><div class="val">${d.totalUsers||0}</div><div class="lbl">Total Users</div></div>
+                    <div class="stat"><div class="val">${d.totalOrders||0}</div><div class="lbl">Total Orders</div></div>
+                    <div class="stat"><div class="val">${d.totalAutomation||0}</div><div class="lbl">Automation Tasks</div></div>
+                    <div class="stat"><div class="val">${d.servicesCached||0}</div><div class="lbl">Cached Services</div></div>
+                `;
+                document.getElementById('sec').innerText=d.adminSecret||'-';
+                const u=d.users||[];
+                document.getElementById('utbl').innerHTML=u.length?u.map(x=>`
+                    <tr>
+                        <td><strong>${x.username}</strong></td>
+                        <td style="font-size:.8rem;color:#888;">${x.apiKey||'N/A'}</td>
+                        <td><span class="badge badge-info">${x.orders}</span></td>
+                        <td><span class="badge badge-info">${x.automation}</span></td>
+                        <td style="font-size:.8rem;">${x.created?new Date(x.created).toLocaleDateString():'?'}</td>
+                        <td><button class="sm red" onclick="delUser('${x.username}')">🗑️</button></td>
+                    </tr>
+                `).join(''):'<tr><td colspan="6" style="text-align:center;color:#888;">No users</td></tr>';
+            }catch(e){}
+        }
+
+        async function delUser(u){
+            if(!confirm(`Delete "${u}"? All data will be lost!`)) return;
+            await fetch('/api/admin/delete-user',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:u})});
+            load();
+        }
+
+        async function refreshSvc(){
+            document.getElementById('rmsg').innerHTML='<div class="msg">Refreshing...</div>';
+            const r=await fetch('/api/admin/refresh-services',{method:'POST'});
+            const d=await r.json();
+            document.getElementById('rmsg').innerHTML=d.success?`<div class="msg success">✅ ${d.message}</div>`:`<div class="msg error">❌ Failed</div>`;
+            load();
+        }
+
+        load();
+    </script>
+</body>
+</html>

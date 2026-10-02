@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SMM Panel</title>
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{background:linear-gradient(135deg,#0a0a1a,#1a1a3a);color:#fff;font-family:'Segoe UI',Arial,sans-serif;padding:15px;min-height:100vh}
+        .card{background:rgba(20,20,40,.9);border-radius:14px;padding:20px;margin-bottom:16px;border:1px solid rgba(255,255,255,.1)}
+        h2{font-size:1.5rem;color:#00d4ff;margin-bottom:15px}
+        h3{font-size:1.15rem;color:#eee;margin-bottom:10px}
+        h4{color:#ffd700;margin-bottom:8px}
+        label{font-size:.85rem;color:#aaa;display:block;margin:10px 0 5px}
+        input,textarea,select,button{width:100%;padding:11px 14px;border-radius:10px;margin:4px 0;border:1px solid rgba(255,255,255,.15);background:rgba(0,0,0,.3);color:#fff;font-size:.9rem;font-family:inherit}
+        textarea{min-height:100px;resize:vertical}
+        button{background:linear-gradient(135deg,#6c5ce7,#8b5cf6);color:#fff;font-weight:700;border:none;cursor:pointer;transition:all .2s}
+        button:hover{transform:translateY(-1px);box-shadow:0 8px 20px rgba(108,92,231,.4)}
+        button:active{transform:scale(.97)}
+        button.green{background:linear-gradient(135deg,#00b894,#00cec9)}
+        button.red{background:linear-gradient(135deg,#e74c3c,#c0392b)}
+        button.gold{background:linear-gradient(135deg,#f39c12,#e67e22)}
+        button.sm{padding:5px 10px;font-size:.75rem;width:auto;display:inline-block}
+        .top-bar{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:18px}
+        .badge{background:rgba(0,212,255,.15);padding:8px 16px;border-radius:25px;font-size:.85rem;border:1px solid rgba(0,212,255,.3)}
+        .tabs{display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap}
+        .tabs button{flex:1;min-width:80px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);font-weight:500}
+        .tabs button.active{background:#6c5ce7;border-color:#6c5ce7;font-weight:700}
+        .tab-content{display:none}
+        .tab-content.active{display:block}
+        .search-box{display:flex;gap:8px;margin-bottom:10px}
+        .search-box input{flex:1}
+        .search-box button{width:auto;white-space:nowrap}
+        .result-list{max-height:350px;overflow-y:auto}
+        .result-item{background:rgba(0,0,0,.3);padding:12px 14px;border-radius:10px;margin:6px 0;border:1px solid rgba(255,255,255,.1);cursor:pointer;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;transition:all .2s}
+        .result-item:hover{border-color:#6c5ce7;background:rgba(108,92,231,.1)}
+        .result-item.selected{border-color:#00b894;background:rgba(0,184,148,.1)}
+        .result-name{font-weight:600}
+        .result-meta{font-size:.75rem;color:#888}
+        .result-price{font-weight:700;color:#00d4ff;font-size:1rem}
+        .fav-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px}
+        .fav-card{background:rgba(0,0,0,.3);padding:14px;border-radius:10px;border:1px solid rgba(243,156,18,.3);cursor:pointer;transition:all .2s}
+        .fav-card:hover{border-color:#f39c12;background:rgba(243,156,18,.05)}
+        .fav-name{font-weight:600;margin-bottom:4px}
+        .fav-info{font-size:.75rem;color:#888}
+        .fav-price{color:#00d4ff;font-weight:600;margin-top:6px}
+        .order-summary{background:rgba(255,215,0,.08);border:1px solid rgba(255,215,0,.3);border-radius:12px;padding:15px;margin:12px 0}
+        .summary-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:.9rem}
+        .summary-grid .lbl{color:#888}
+        .summary-grid .val{color:#fff}
+        .summary-divider{grid-column:1/-1;border-top:1px solid rgba(255,255,255,.1);padding-top:8px}
+        .price-grid{display:flex;gap:10px;flex-wrap:wrap;margin:12px 0}
+        .price-box{background:rgba(0,0,0,.3);padding:12px;border-radius:10px;text-align:center;flex:1;min-width:100px}
+        .price-box .lbl{font-size:.7rem;color:#888}
+        .price-box .val{font-size:1.1rem;font-weight:700;color:#00d4ff}
+        table{width:100%;border-collapse:collapse;font-size:.82rem}
+        th{text-align:left;padding:10px 8px;border-bottom:1px solid rgba(255,255,255,.1);color:#999;font-size:.75rem;text-transform:uppercase}
+        td{padding:10px 8px;border-bottom:1px solid rgba(255,255,255,.05)}
+        .msg{padding:12px;border-radius:10px;margin:10px 0;font-size:.9rem}
+        .msg.success{background:rgba(0,255,136,.1);color:#00ff88;border:1px solid rgba(0,255,136,.3)}
+        .msg.error{background:rgba(255,71,87,.1);color:#ff4757;border:1px solid rgba(255,71,87,.3)}
+        .msg.info{background:rgba(0,212,255,.1);color:#00d4ff;border:1px solid rgba(0,212,255,.3)}
+        .link-row{background:rgba(0,0,0,.2);padding:8px 12px!important}
+        .link-display{color:#00d4ff;text-decoration:none;font-size:.8rem;word-break:break-all;display:block;padding:5px 10px;background:rgba(0,212,255,.05);border-radius:6px;border:1px solid rgba(0,212,255,.2)}
+        .link-display:hover{color:#fff;background:rgba(0,212,255,.15);border-color:#00d4ff}
+        .link-label{color:#888;font-size:.7rem;margin-bottom:4px}
+        .target-edit{display:inline-flex;align-items:center;gap:4px}
+        .target-edit input{width:80px;padding:4px 8px;font-size:.8rem;border-radius:6px;background:rgba(0,0,0,.5);color:#fff;border:1px solid rgba(255,255,255,.2)}
+        a{color:#aaccff;text-decoration:none} a:hover{color:#fff}
+        ::-webkit-scrollbar{width:4px}
+        ::-webkit-scrollbar-thumb{background:rgba(255,255,255,.2);border-radius:10px}
+        @media(max-width:600px){body{padding:10px}.tabs button{font-size:.8rem;padding:8px}.fav-grid{grid-template-columns:1fr}.price-grid{flex-direction:column}.summary-grid{grid-template-columns:1fr}}
+    </style>
+</head>
+<body>
+    <div class="top-bar"><h2>🚀 SMM Panel</h2><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span class="badge" id="bal">💰 Loading...</span><span class="badge" id="svc">📦 ...</span><a href="/logout">🚪 Logout</a></div></div>
+    <div class="tabs"><button class="active" onclick="showTab(0)">📦 Automation Setup</button><button onclick="showTab(1)">⭐ Favorites</button><button onclick="showTab(2)">🤖 Active Tasks</button></div>
+
+    <div class="tab-content active" id="tab0">
+        <div class="card"><h3>🔍 Search Services</h3><div class="search-box"><input type="text" id="sq" placeholder="Search by Service ID or Name..." onkeypress="if(event.key==='Enter')search()"><button onclick="search()">🔍 Search</button></div><div class="result-list" id="sr"><p style="color:#888;text-align:center;padding:30px;">Enter Service ID or Name and click Search</p></div></div>
+        <div class="card" id="ofc" style="display:none;">
+            <h3>🚀 Start Automation</h3>
+            <div id="si" style="background:rgba(0,184,148,.1);padding:12px;border-radius:10px;margin-bottom:12px;border:1px solid rgba(0,184,148,.3)"></div>
+            <label>📎 Video Links (one per line)</label><textarea id="links" placeholder="https://www.tiktok.com/@user/video/123456&#10;https://vt.tiktok.com/XXXXX/" oninput="calc()"></textarea><small style="color:#888;" id="lc">0 links</small>
+            <label>🔢 Quantity (per link)</label><input type="number" id="qty" placeholder="e.g. 1000" oninput="calc()" min="1"><small style="color:#888;" id="mm"></small>
+            <div class="order-summary" id="os" style="display:none;"><h4>📋 Summary</h4><div class="summary-grid"><div><span class="lbl">Service:</span><span class="val" id="ssvc">-</span></div><div><span class="lbl">ID:</span><span class="val" id="sid">-</span></div><div><span class="lbl">Rate:</span><span style="color:#00d4ff" id="srate">-</span></div><div><span class="lbl">Qty/Link:</span><span class="val" id="sqty">-</span></div><div class="summary-divider"><span class="lbl">📎 Links:</span><span class="val" id="slinks">0</span></div><div><span class="lbl">💰 Per Link:</span><span style="color:#00ff88;font-weight:700" id="spl">৳0</span></div><div><span class="lbl">💵 TOTAL:</span><span style="color:#ffd700;font-weight:700;font-size:1.1rem" id="stot">৳0</span></div></div></div>
+            <div class="price-grid" id="pg"></div>
+            <button onclick="setupAuto()" style="font-size:1.1rem;padding:14px;">🚀 Start Automation</button>
+            <button class="sm gold" onclick="saveFav()" style="margin-top:8px;">⭐ Save to Favorites</button>
+            <div id="omsg"></div>
+        </div>
+    </div>
+    <div class="tab-content" id="tab1"><div class="card"><h3>⭐ Saved Services</h3><div class="fav-grid" id="fg"><p style="color:#888;text-align:center;padding:20px;">No favorites yet</p></div></div></div>
+    <div class="tab-content" id="tab2">
+    <div class="card"><h3>⚙️ Active Automation</h3><div style="overflow-x:auto;"><div id="atbl"><p style="color:#888;text-align:center;padding:20px;">No active tasks</p></div></div></div>
+</div>
+
+    <script>
+        function toast(m,t='info'){const c=document.createElement('div');c.style.cssText='position:fixed;top:20px;right:20px;z-index:9999;padding:12px 20px;border-radius:8px;color:#fff;font-weight:500;max-width:300px;';c.style.background=t==='error'?'#e74c3c':t==='success'?'#00b894':'#6c5ce7';c.innerText=m;document.body.appendChild(c);setTimeout(()=>c.remove(),2500);}
+        let sel=null,favs=[];
+        function showTab(n){document.querySelectorAll('.tab-content').forEach((t,i)=>t.classList.toggle('active',i===n));document.querySelectorAll('.tabs button').forEach((b,i)=>b.classList.toggle('active',i===n));if(n===1)loadFavs();if(n===2)loadAuto();}
+        async function init(){try{const r=await fetch('/api/init');const d=await r.json();document.getElementById('bal').innerText='💰 ৳'+(d.balance||'0');document.getElementById('svc').innerText='📦 '+(d.services||0)+' svc';}catch(e){}}
+        async function search(){const q=document.getElementById('sq').value.trim();if(!q)return;document.getElementById('sr').innerHTML='<p style="color:#888;text-align:center;padding:20px;">Searching...</p>';try{const r=await fetch('/api/services/search?q='+encodeURIComponent(q));const d=await r.json();if(!d.results?.length){document.getElementById('sr').innerHTML='<p style="color:#ff6b6b;">No services found</p>';return;}document.getElementById('sr').innerHTML=d.results.map(s=>`<div class="result-item ${sel?.id===s.id?'selected':''}" onclick="selectSvc('${s.id}')"><div style="flex:1;min-width:180px"><div class="result-name">${s.name}</div><div class="result-meta">ID: ${s.id} | ${s.category}</div><div class="result-meta">Min: ${s.min.toLocaleString()} | Max: ${s.max.toLocaleString()}</div></div><div class="result-price">৳${s.rateBDT}<small style="font-size:.7rem;color:#888">/1k</small></div></div>`).join('');}catch(e){document.getElementById('sr').innerHTML='<p style="color:#ff6b6b;">Search failed</p>';}}
+        async function selectSvc(id){const r=await fetch('/api/services/search?q='+id);const d=await r.json();sel=d.results.find(s=>s.id===id);if(!sel)return;document.getElementById('ofc').style.display='block';document.getElementById('si').innerHTML=`✅ <strong>${sel.name}</strong><br><small>ID: ${sel.id} | ${sel.category}</small>`;document.getElementById('mm').innerText=`Min: ${sel.min.toLocaleString()} | Max: ${sel.max.toLocaleString()}`;calc();search();document.getElementById('ofc').scrollIntoView({behavior:'smooth'});}
+        function calc(){if(!sel)return;const q=parseInt(document.getElementById('qty').value)||0;const l=document.getElementById('links').value.split('\n').filter(x=>x.trim().startsWith('http'));document.getElementById('lc').innerText=l.length+' links';const pl=(q*sel.rateBDT)/1000,tot=pl*l.length;if(l.length>0&&q>0){document.getElementById('os').style.display='block';document.getElementById('ssvc').innerText=sel.name;document.getElementById('sid').innerText=sel.id;document.getElementById('srate').innerText='৳'+sel.rateBDT.toFixed(2)+' /1k';document.getElementById('sqty').innerText=q.toLocaleString();document.getElementById('slinks').innerText=l.length;document.getElementById('spl').innerText='৳'+pl.toFixed(4);document.getElementById('stot').innerText='৳'+tot.toFixed(4);}else document.getElementById('os').style.display='none';document.getElementById('pg').innerHTML=`<div class="price-box"><div class="lbl">Rate/1k</div><div class="val">৳${sel.rateBDT.toFixed(2)}</div></div><div class="price-box"><div class="lbl">Per Link</div><div class="val">৳${pl.toFixed(4)}</div></div>${l.length>1?`<div class="price-box"><div class="lbl">TOTAL</div><div class="val" style="color:#ffd700;">৳${tot.toFixed(4)}</div></div>`:''}`;}
+
+        async function setupAuto(){if(!sel)return toast('Select a service!','error');const l=document.getElementById('links').value.split('\n').filter(x=>x.trim().startsWith('http'));const q=parseInt(document.getElementById('qty').value);if(!l.length)return toast('Enter links!','error');if(!q||q<sel.min||q>sel.max)return toast(`Qty: ${sel.min.toLocaleString()}-${sel.max.toLocaleString()}`,'error');if(!confirm(`Setup ${l.length} automation(s)?\nTarget: ${q}\n⚠️ Order will be placed when needed`))return;document.getElementById('omsg').innerHTML='<div class="msg info">Setting up...</div>';let ok=0;for(const link of l){try{const r=await fetch('/api/automation/setup',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({service:sel.id,link:link.trim(),quantity:q,target:q})});const d=await r.json();if(d.success)ok++;}catch(e){}}document.getElementById('omsg').innerHTML=ok>0?`<div class="msg success">✅ ${ok} automations ready!</div>`:`<div class="msg error">❌ Failed</div>`;document.getElementById('qty').value='';calc();toast(`✅ ${ok} ready!`,'success');setTimeout(()=>showTab(2),1000);}
+
+        async function saveFav(){if(!sel)return;const r=await fetch('/api/favorites/save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({service:sel})});const d=await r.json();toast(d.message||'Saved!');}
+        async function loadFavs(){try{const r=await fetch('/api/favorites');favs=await r.json();if(!favs.length){document.getElementById('fg').innerHTML='<p style="color:#888;">No favorites</p>';return;}document.getElementById('fg').innerHTML=favs.map(f=>`<div class="fav-card" onclick="useFav('${f.id}')"><div class="fav-name">${f.name}</div><div class="fav-info">ID: ${f.id}</div><div class="fav-price">৳${f.rateBDT||0} /1k</div><button class="sm red" onclick="event.stopPropagation();delFav('${f.id}')">🗑️</button></div>`).join('');}catch(e){}}
+        function useFav(id){const f=favs.find(x=>x.id===id);if(!f)return;sel=f;document.getElementById('ofc').style.display='block';document.getElementById('si').innerHTML=`⭐ <strong>${f.name}</strong>`;document.getElementById('mm').innerText=`Min: ${f.min} | Max: ${f.max}`;showTab(0);calc();}
+        async function delFav(id){await fetch('/api/favorites/remove',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({serviceId:id})});loadFavs();}
+
+        // ==================== AUTOMATION (FIXED) ====================
+async function loadAuto(){try{const[tR,oR]=await Promise.all([fetch('/api/automation'),fetch('/api/orders')]);const t=await tR.json();if(!t||!t.length){document.getElementById('atbl').innerHTML='<p style="color:#888;text-align:center;padding:20px;">No active tasks</p>';return;}document.getElementById('atbl').innerHTML=`<table><thead><tr><th>Order ID</th><th>Target</th><th>Current</th><th>Needed</th><th>Orders</th><th>Status</th><th>Actions</th></tr></thead><tbody>${t.map(x=>{const nd=Math.max(0,(x.target||0)-(x.last_views||0));const dn=nd===0&&x.last_views>0;return`<tr><td style="font-size:.75rem">${(x.order_id||'').substring(0,12)}...</td><td><div class="target-edit"><span id="tv_${x.order_id}">${(x.target||0).toLocaleString()}</span><button class="sm" onclick="editTg('${x.order_id}',${x.target||0})" style="font-size:.65rem;padding:2px 6px;">✏️</button></div><div id="te_${x.order_id}" style="display:none;margin-top:4px;"><input type="number" id="ti_${x.order_id}" value="${x.target||0}" min="1" style="width:80px;"><button class="sm green" onclick="saveTg('${x.order_id}')" style="font-size:.6rem;">✅</button><button class="sm red" onclick="cancelTg('${x.order_id}',${x.target||0})" style="font-size:.6rem;">❌</button></div></td><td style="color:#00d4ff;font-weight:600">${(x.last_views||0).toLocaleString()}</td><td style="color:${dn?'#00ff88':'#ffd700'};font-weight:600">${dn?'✅ Done':nd.toLocaleString()}</td><td>${x.order_count||0}</td><td><span style="color:${x.active?'#00ff88':'#888'}">${x.active?'⚡ Active':'⏸️ Paused'}</span></td><td><button class="sm" onclick="refreshTask('${x.order_id}')">🔄</button>${x.active?`<button class="sm" onclick="pauseTask('${x.order_id}')" style="background:#f39c12;">⏸️</button>`:`<button class="sm green" onclick="resumeTask('${x.order_id}')">▶</button>`}<button class="sm red" onclick="removeTask('${x.order_id}')">🗑️</button></td></tr><tr class="link-row"><td colspan="7"><div class="link-label">🎬 Video:</div><a href="${x.link||'#'}" target="_blank" class="link-display">🔗 ${x.link||'No link'}</a></td></tr><tr><td colspan="7" style="padding:2px;"></td></tr>`}).join('')}</tbody></table>`;}catch(e){console.error('loadAuto error:',e);document.getElementById('atbl').innerHTML='<p style="color:#ff6b6b;text-align:center;padding:20px;">Failed to load tasks</p>';}}
+        function editTg(id,v){document.getElementById('tv_'+id).style.display='none';document.getElementById('te_'+id).style.display='block';document.getElementById('ti_'+id).value=v;document.getElementById('ti_'+id).focus();}
+        function cancelTg(id,v){document.getElementById('tv_'+id).style.display='inline';document.getElementById('te_'+id).style.display='none';document.getElementById('tv_'+id).innerText=(v||0).toLocaleString();}
+        async function saveTg(id){const v=parseInt(document.getElementById('ti_'+id).value);if(!v||v<1)return toast('Valid target','error');await fetch('/api/automation/update-target',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({order_id:id,target:v})});loadAuto();}
+        async function refreshTask(id){const r=await fetch('/api/automation/refresh',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({order_id:id})});const d=await r.json();if(d.success){toast(`Views: ${d.views?.toLocaleString()} | Need: ${d.needed?.toLocaleString()}`,'success');loadAuto();}}
+        async function pauseTask(id){await fetch('/api/automation/pause',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({order_id:id})});loadAuto();}
+        async function resumeTask(id){await fetch('/api/automation/resume',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({order_id:id})});loadAuto();}
+        async function removeTask(id){if(!confirm('Remove?'))return;await fetch('/api/automation/remove',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({order_id:id})});loadAuto();}
+
+        document.getElementById('links').addEventListener('input',calc);
+        init();setInterval(()=>{if(document.getElementById('tab2').classList.contains('active'))loadAuto();},30000);
+    </script>
+</body>
+</html>
